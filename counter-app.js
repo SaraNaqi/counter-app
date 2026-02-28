@@ -26,6 +26,10 @@ export class CounterApp extends DDDSuper(I18NMixin(LitElement)) {
       ...this.t,
       title: "Title",
     };
+    this.count= 16;
+    this.max= 25;
+    this.min= 10;
+
     this.registerLocalization({
       context: this,
       localesPath:
@@ -39,6 +43,9 @@ export class CounterApp extends DDDSuper(I18NMixin(LitElement)) {
     return {
       ...super.properties,
       title: { type: String },
+      count: { type: Number, reflect: true },
+      min: { type: Number, reflect: true },
+      max: { type: Number, reflect: true },
     };
   }
 
@@ -52,6 +59,20 @@ export class CounterApp extends DDDSuper(I18NMixin(LitElement)) {
         background-color: var(--ddd-theme-accent);
         font-family: var(--ddd-font-navigation);
       }
+  .count{
+        margin: 0;
+        line-height: 1;
+        font-size: var(--counter-app-label-font-size, var(--ddd-font-size-xl));
+        letter-spacing: -0.02em;
+      }
+
+      :host([count= "18"]) h3 {
+        color: var(--ddd-theme-default-errorLight);
+      }
+    
+      :host([count= "21"]) h3 {
+        color: var(--ddd-theme-default-info);
+      }
       .wrapper {
         margin: var(--ddd-spacing-2);
         padding: var(--ddd-spacing-4);
@@ -59,17 +80,105 @@ export class CounterApp extends DDDSuper(I18NMixin(LitElement)) {
       h3 span {
         font-size: var(--counter-app-label-font-size, var(--ddd-font-size-s));
       }
+      .controls {
+   margin-top: var(--ddd-spacing-4);
+   display: flex;
+   gap: var(--ddd-spacing-2);
+   align-items: clearInterval;
+  }
+  button {
+          padding: var(--ddd-spacing-2) var(--ddd-spacing-4);
+          border-radius: var(--ddd-radius-sm);
+          border: 2px solid var(--ddd-theme-primary);
+          background: transparent;
+          color: var(--ddd-theme-primary);
+          cursor: pointer;
+          transition: transform 120ms ease-in-out;
+        }
+
+        button:hover:not([disabled]) {
+          transform: translateY(-1px);
+        }
+
+        button:focus-visible {
+          outline: 3px solid var(--ddd-theme-default-athertonViolet);
+          outline-offset: 2px;
+        }
+
+        button[disabled] {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .extras {
+          margin-top: var(--ddd-spacing-4);
+        }
+
     `];
   }
 
   // Lit render the HTML
   render() {
+    const atMin = this.count <= this.min;
+    const atMax = this.count >= this.max;
+
     return html`
+ <confetti-container id="confetti">
 <div class="wrapper">
-  <h3><span>${this.t.title}:</span> ${this.title}</h3>
+<h3>${this.count}</h3>
+<div class="controls">
+<button @click="${this.decrement}"?disabled="${atMin}">-</button>
+<button @click="${this.increment}"?disabled="${atMax}">+</button>
+</div>
+<div class="extras">
   <slot></slot>
-</div>`;
+</div>
+</div>
+</confetti-container>
+`;
   }
+ willUpdate(changedProperties) {
+    if (this.min > this.max) {
+      const temp = this.min;
+      this.min = this.max;
+      this.max = temp;
+    }
+
+    if (this.count < this.min) this.count = this.min;
+    if (this.count > this.max) this.count = this.max;
+
+    super.willUpdate?.(changedProperties);
+  }
+
+updated(changedProperties) {
+  if (super.updated) {
+    super.updated(changedProperties);
+  }
+  if (changedProperties.has('count')) {
+   if (this.count == 21)
+   {
+    this.makeItRain();
+   }
+  }
+}
+increment() {
+  this.count++;
+
+}
+decrement() {
+  this.count--;
+}
+makeItRain() {
+import("@haxtheweb/multiple-choice/lib/confetti-container.js").then(() => {
+      setTimeout(() => {
+     const confetti = this.shadowRoot?.querySelector("#confetti")
+     if(confetti)
+      {confetti.setAttribute("popped", "");
+  }
+},0);
+ });
+}
+
 
   /**
    * haxProperties integration via file reference
